@@ -98,6 +98,36 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+     // users can update their profile
+    app.patch("/users/update-profile", async (req, res) => {
+  const { email, newName, newEmail, newPhoto } = req.body;
+
+  if (!email) {
+    return res.status(400).send({ message: "Current email is required" });
+  }
+
+  const updateDoc = {
+    last_log_in: new Date().toISOString(), 
+  };
+
+  if (newName) updateDoc.name = newName;
+  if (newEmail) updateDoc.email = newEmail;
+  if (newPhoto) updateDoc.photo = newPhoto;
+
+  try {
+    const result = await usersCollection.updateOne(
+      { email },
+      { $set: updateDoc }
+    );
+
+    res.send({
+      message: "Profile and last_log_in updated successfully",
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (err) {
+    res.status(500).send({ message: "Failed to update user", error: err });
+  }
+});
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
