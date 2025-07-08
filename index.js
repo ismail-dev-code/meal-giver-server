@@ -36,8 +36,10 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-
+    const db = client.db("mealgiver");
     const usersCollection = db.collection("users");
+    const restaurantsCollection = db.collection("restaurants");
+    const charitiesCollection = db.collection("charities");
 
     // custom middlewares
     const verifyFBToken = async (req, res, next) => {
@@ -69,8 +71,28 @@ async function run() {
       }
       next();
     };
+    const verifyRestaurant = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email };
+      const user = await usersCollection.findOne(query);
+      console.log(user);
+      if (!user || user.role !== "restaurant") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+    const verifyCharity = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email };
+      const user = await usersCollection.findOne(query);
+      console.log(user);
+      if (!user || user.role !== "charity") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
 
-    // user related api
+    // user related API
     app.post("/users", async (req, res) => {
       const email = req.body.email;
 
@@ -98,36 +120,36 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
-     // users can update their profile
+    // users can update their profile
     app.patch("/users/update-profile", async (req, res) => {
-  const { email, newName, newEmail, newPhoto } = req.body;
+      const { email, newName, newEmail, newPhoto } = req.body;
 
-  if (!email) {
-    return res.status(400).send({ message: "Current email is required" });
-  }
+      if (!email) {
+        return res.status(400).send({ message: "Current email is required" });
+      }
 
-  const updateDoc = {
-    last_log_in: new Date().toISOString(), 
-  };
+      const updateDoc = {
+        last_log_in: new Date().toISOString(),
+      };
 
-  if (newName) updateDoc.name = newName;
-  if (newEmail) updateDoc.email = newEmail;
-  if (newPhoto) updateDoc.photo = newPhoto;
+      if (newName) updateDoc.name = newName;
+      if (newEmail) updateDoc.email = newEmail;
+      if (newPhoto) updateDoc.photo = newPhoto;
 
-  try {
-    const result = await usersCollection.updateOne(
-      { email },
-      { $set: updateDoc }
-    );
+      try {
+        const result = await usersCollection.updateOne(
+          { email },
+          { $set: updateDoc }
+        );
 
-    res.send({
-      message: "Profile and last_log_in updated successfully",
-      modifiedCount: result.modifiedCount,
+        res.send({
+          message: "Profile and last_log_in updated successfully",
+          modifiedCount: result.modifiedCount,
+        });
+      } catch (err) {
+        res.status(500).send({ message: "Failed to update user", error: err });
+      }
     });
-  } catch (err) {
-    res.status(500).send({ message: "Failed to update user", error: err });
-  }
-});
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
