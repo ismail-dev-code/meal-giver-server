@@ -70,6 +70,35 @@ async function run() {
       next();
     };
 
+    // user related api
+    app.post("/users", async (req, res) => {
+      const email = req.body.email;
+
+      const userExists = await usersCollection.findOne({ email });
+
+      if (userExists) {
+        //  Update last log in
+        await usersCollection.updateOne(
+          { email },
+          { $set: { last_log_in: new Date().toISOString() } }
+        );
+
+        return res.status(200).send({
+          message: "User already exists. last_log_in updated.",
+          inserted: false,
+        });
+      }
+
+      const user = {
+        ...req.body,
+        created_at: new Date().toISOString(),
+        last_log_in: new Date().toISOString(),
+      };
+
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
