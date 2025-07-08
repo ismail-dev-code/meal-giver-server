@@ -40,7 +40,9 @@ async function run() {
     const usersCollection = db.collection("users");
     const restaurantsCollection = db.collection("restaurants");
     const charitiesCollection = db.collection("charities");
-
+    const donationsCollection = db.collection("donations");
+    const paymentsCollection = db.collection("payments");
+    const roleRequestsCollection = db.collection("roleRequests");
     // custom middlewares
     const verifyFBToken = async (req, res, next) => {
       const authHeader = req.headers.authorization;
@@ -158,7 +160,15 @@ async function run() {
     );
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
   }
 }
 run().catch(console.dir);
+
+
+app.get("/", (req, res) => {
+  res.send("mealgiver Server is running...");
+});
+
+app.listen(port, () => {
+  console.log(`mealgiver server running on port ${port}`);
+});
