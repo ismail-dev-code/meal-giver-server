@@ -818,6 +818,39 @@ app.delete("/reviews/:id", verifyFBToken, async (req, res) => {
       }
     );
 
+app.get("/charity/latest-requests/recent", async (req, res) => {
+  try {
+    const requests = await db
+      .collection("roleRequests")
+      .find({ status: "approved" }) // Only show approved charity role requests
+      .sort({ date: -1 })
+      .limit(6)
+      .toArray();
+
+    const enrichedRequests = await Promise.all(
+      requests.map(async (req) => {
+        const user = await db.collection("users").findOne({ email: req.email });
+
+        return {
+          _id: req._id,
+          charityName: user?.name || "Unknown Charity",
+          charityLogo: user?.photo || null,
+          description: req.mission || "No mission statement available",
+          donationTitle: req.organization || "No Organization Name",
+        };
+      })
+    );
+
+    res.send(enrichedRequests);
+  } catch (error) {
+    console.error("Error fetching charity requests:", error);
+    res.status(500).send({ message: "Failed to load charity requests" });
+  }
+});
+
+
+
+
     // Delete donation by ID
     app.delete(
       "/donations/:id",
@@ -853,6 +886,36 @@ app.delete("/reviews/:id", verifyFBToken, async (req, res) => {
     }
   }
 );
+
+app.get("/reviews/community", async (req, res) => {
+  try {
+    const reviews = await db
+      .collection("reviews")
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .toArray();
+
+    const enriched = await Promise.all(
+      reviews.map(async (review) => {
+        const user = await db.collection("users").findOne({ email: review.userEmail });
+        return {
+          _id: review._id,
+          name: review.reviewer || user?.name || "Anonymous",
+          role: user?.role === "restaurant" ? "Restaurant Partner" : "Charity Partner",
+          image: user?.photo || "/default-logo.png",
+          quote: review.comment,
+        };
+      })
+    );
+
+    res.send(enriched);
+  } catch (err) {
+    console.error("Failed to load community stories", err);
+    res.status(500).send({ message: "Failed to load community stories" });
+  }
+});
+
 
  app.get(
   "/admin/email/:email",
