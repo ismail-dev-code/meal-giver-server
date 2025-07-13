@@ -193,11 +193,21 @@ app.get("/charity-role-request", async (req, res) => {
         res.status(500).send({ message: "Failed to fetch featured donations" });
       }
     });
+const verifyAdminOrRestaurant = async (req, res, next) => {
+  const email = req.decoded.email;
+  const user = await usersCollection.findOne({ email });
+
+  if (!user || (user.role !== "admin" && user.role !== "restaurant")) {
+    return res.status(403).send({ message: "Forbidden access" });
+  }
+
+  next();
+};
 
     app.patch(
       "/donations/:id",
       verifyFBToken,
-      verifyAdmin,
+      verifyAdminOrRestaurant,
       async (req, res) => {
         const { id } = req.params;
         const updateData = req.body;
@@ -822,7 +832,57 @@ app.delete("/reviews/:id", verifyFBToken, async (req, res) => {
         res.send(result);
       }
     );
-    // restaurant related API
+    app.get(
+  "/charity/email/:email",
+  verifyFBToken,
+  verifyCharity,
+  async (req, res) => {
+    const { email } = req.params;
+
+    try {
+      const user = await usersCollection.findOne({ email });
+
+      if (!user || user.role !== "charity") {
+        return res.status(404).send({ message: "Charity not found" });
+      }
+
+      res.send(user);
+    } catch (err) {
+      console.error("Error fetching charity profile:", err);
+      res.status(500).send({ message: "Internal server error" });
+    }
+  }
+);
+
+ app.get(
+  "/admin/email/:email",
+  verifyFBToken,
+  verifyAdmin,
+  async (req, res) => {
+    const { email } = req.params;
+
+    try {
+      const user = await usersCollection.findOne({ email });
+
+      if (!user || user.role !== "admin") {
+        return res.status(404).send({ message: "Admin not found" });
+      }
+
+      res.send({
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        photo: user.photo || null,
+        last_log_in: user.last_log_in,
+        created_at: user.created_at,
+      });
+    } catch (err) {
+      console.error("Error fetching admin profile:", err);
+      res.status(500).send({ message: "Internal server error" });
+    }
+  }
+);
+
 
     // Get restaurant profile by email (used in RestaurantProfile component)
     app.get(
