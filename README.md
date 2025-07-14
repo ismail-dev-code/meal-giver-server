@@ -2,13 +2,13 @@
 
 The **MealGiver Server** is the core API service for the MealGiver platform — a MERN stack-based food donation and redistribution system connecting restaurants with verified charities and individuals to reduce food waste.
 
----
+
 
 ## 🔗 Live Server
 
 > ⚙️ Base URL: `https://mealgiver-server.vercel.app`
 
----
+
 
 
 ## ⚙️ Technologies Used
@@ -25,14 +25,14 @@ The **MealGiver Server** is the core API service for the MealGiver platform — 
 
 
 
----
+
 
 ## 🔐 Authentication & Middleware
 
 - **Firebase Authentication** (`verifyFBToken`)
 - **Role-based Authorization** (`verifyAdmin`, `verifyRestaurant`, `verifyCharity`)
 
----
+
 
 ## 🔑 ENV Configuration
 
@@ -52,7 +52,7 @@ FB_SERVICE_KEY=
 
 > `https://mealgiver-server.vercel.app`
 
----
+
 
 ## ✅ Auth & User Endpoints
 
@@ -64,7 +64,7 @@ FB_SERVICE_KEY=
 | `DELETE` | `/users/:id`         | Admin         | Delete a user              |
 | `GET`    | `/users/role/:email` | Authenticated | Get current user's role    |
 
----
+
 
 ## 🍽️ Donations Endpoints
 
@@ -79,7 +79,7 @@ FB_SERVICE_KEY=
 | `GET`    | `/donations/:id`         | Public     | Get donation details               |
 | `PATCH`  | `/donations/approve/:id` | Admin      | Approve a donation submission      |
 
----
+
 
 ## 📦 Donation Request Endpoints
 
@@ -93,7 +93,7 @@ FB_SERVICE_KEY=
 | `GET`   | `/charity/received-donations`     | Charity    | Get all received/picked-up donations         |
 | `GET`   | `/charity/latest-requests/recent` | Public     | Get recent charity requests (for homepage)   |
 
----
+
 
 ## 🚚 Pickup Confirmation Endpoints
 
@@ -102,7 +102,7 @@ FB_SERVICE_KEY=
 | `GET`   | `/charity/my-pickups`         | Charity | Get all assigned pickups |
 | `PATCH` | `/charity/pickup-confirm/:id` | Charity | Confirm a pickup         |
 
----
+
 
 ## 💳 Charity Role Requests (Stripe)
 
@@ -113,7 +113,7 @@ FB_SERVICE_KEY=
 | `PATCH` | `/admin/role-requests/:id` | Admin  | Approve or reject role request   |
 | `POST`  | `/create-payment-intent`   | Auth   | Generate Stripe payment intent   |
 
----
+
 
 ## 🌟 Review Endpoints
 
@@ -124,7 +124,7 @@ FB_SERVICE_KEY=
 | `GET`  | `/reviews/mine`           | Charity | Get logged-in user's reviews        |
 | `GET`  | `/reviews/community`      | Public  | Get latest community stories        |
 
----
+
 
 ## 📊 Dashboard Stats
 
@@ -134,7 +134,7 @@ FB_SERVICE_KEY=
 | `GET`  | `/restaurant/stats` | Restaurant | Restaurant-specific stats               |
 | `GET`  | `/charity/stats`    | Charity    | Charity-specific stats                  |
 
----
+
 
 ## 🧪 Testing the API
 
@@ -146,13 +146,13 @@ You can test the endpoints using:
 All secured routes require this header:  
 `Authorization: Bearer <firebase_id_token>`
 
----
+
 
 ## 🙋 Contributing
 
 Feel free to fork the project, open issues, or submit PRs. Contributions, suggestions, and feedback are always welcome!
 
----
+
 
 ## 🧑‍💻 Developer
 
