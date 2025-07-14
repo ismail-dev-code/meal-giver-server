@@ -111,7 +111,7 @@ async function run() {
       const result = await transactionsCollection.insertOne(req.body);
       res.send(result);
     });
-    
+
     app.get("/charity-role-transactions", async (req, res) => {
       const email = req.query.email;
       try {
@@ -160,19 +160,19 @@ async function run() {
         res.status(500).send({ message: "Request failed." });
       }
     });
-//  GET all charity role requests (for Admin panel)
-app.get("/charity-role-request", async (req, res) => {
-  try {
-    const requests = await roleRequestsCollection
-      .find()
-      .sort({ date: -1 })
-      .toArray();
-    res.send(requests);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ message: "Failed to fetch role requests." });
-  }
-});
+    //  GET all charity role requests (for Admin panel)
+    app.get("/charity-role-request", async (req, res) => {
+      try {
+        const requests = await roleRequestsCollection
+          .find()
+          .sort({ date: -1 })
+          .toArray();
+        res.send(requests);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Failed to fetch role requests." });
+      }
+    });
 
     // GET /role-request-status?email=user@example.com
     app.get("/role-request-status", async (req, res) => {
@@ -185,6 +185,7 @@ app.get("/charity-role-request", async (req, res) => {
       try {
         const featuredDonations = await donationsCollection
           .find({ featured: true })
+          .sort({ createdAt: -1 })
           .toArray();
 
         res.send(featuredDonations);
@@ -193,16 +194,16 @@ app.get("/charity-role-request", async (req, res) => {
         res.status(500).send({ message: "Failed to fetch featured donations" });
       }
     });
-const verifyAdminOrRestaurant = async (req, res, next) => {
-  const email = req.decoded.email;
-  const user = await usersCollection.findOne({ email });
+    const verifyAdminOrRestaurant = async (req, res, next) => {
+      const email = req.decoded.email;
+      const user = await usersCollection.findOne({ email });
 
-  if (!user || (user.role !== "admin" && user.role !== "restaurant")) {
-    return res.status(403).send({ message: "Forbidden access" });
-  }
+      if (!user || (user.role !== "admin" && user.role !== "restaurant")) {
+        return res.status(403).send({ message: "Forbidden access" });
+      }
 
-  next();
-};
+      next();
+    };
 
     app.patch(
       "/donations/:id",
@@ -270,7 +271,7 @@ const verifyAdminOrRestaurant = async (req, res, next) => {
         }
       }
     );
-    
+
     app.get(
       "/donations/charity/request-status",
       verifyFBToken,
@@ -307,29 +308,28 @@ const verifyAdminOrRestaurant = async (req, res, next) => {
       }
     );
     app.get("/restaurant/donation-types-stats", async (req, res) => {
-  const email = req.query.email;
-  const types = await donationsCollection
-    .aggregate([
-      { $match: { "restaurant.email": email } },
-      {
-        $group: {
-          _id: "$type",
-          quantity: { $sum: "$quantity" },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          type: "$_id",
-          quantity: 1,
-        },
-      },
-    ])
-    .toArray();
+      const email = req.query.email;
+      const types = await donationsCollection
+        .aggregate([
+          { $match: { "restaurant.email": email } },
+          {
+            $group: {
+              _id: "$type",
+              quantity: { $sum: "$quantity" },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              type: "$_id",
+              quantity: 1,
+            },
+          },
+        ])
+        .toArray();
 
-  res.send(types);
-});
-
+      res.send(types);
+    });
 
     // GET all donation requests made by charity
     app.get(
@@ -403,34 +403,44 @@ const verifyAdminOrRestaurant = async (req, res, next) => {
     //   }
     // );
 
-app.delete("/requests/:id", verifyFBToken, verifyCharity, async (req, res) => {
-  const { id } = req.params;
+    app.delete(
+      "/requests/:id",
+      verifyFBToken,
+      verifyCharity,
+      async (req, res) => {
+        const { id } = req.params;
 
-  try {
-    // Ensure request exists and belongs to the current user and is still pending
-    const existing = await db.collection("requests").findOne({ _id: new ObjectId(id) });
+        try {
+          // Ensure request exists and belongs to the current user and is still pending
+          const existing = await db
+            .collection("requests")
+            .findOne({ _id: new ObjectId(id) });
 
-    if (!existing) {
-      return res.status(404).send({ message: "Request not found." });
-    }
+          if (!existing) {
+            return res.status(404).send({ message: "Request not found." });
+          }
 
-    if (existing.status !== "pending") {
-      return res.status(403).send({ message: "Only pending requests can be cancelled." });
-    }
+          if (existing.status !== "pending") {
+            return res
+              .status(403)
+              .send({ message: "Only pending requests can be cancelled." });
+          }
 
-    const result = await db.collection("requests").deleteOne({ _id: new ObjectId(id) });
+          const result = await db
+            .collection("requests")
+            .deleteOne({ _id: new ObjectId(id) });
 
-    if (result.deletedCount > 0) {
-      res.send({ message: "Request cancelled successfully." });
-    } else {
-      res.status(500).send({ message: "Failed to cancel request." });
-    }
-  } catch (error) {
-    console.error(" Cancel request error:", error);
-    res.status(500).send({ message: "Internal Server Error" });
-  }
-});
-
+          if (result.deletedCount > 0) {
+            res.send({ message: "Request cancelled successfully." });
+          } else {
+            res.status(500).send({ message: "Failed to cancel request." });
+          }
+        } catch (error) {
+          console.error(" Cancel request error:", error);
+          res.status(500).send({ message: "Internal Server Error" });
+        }
+      }
+    );
 
     // Delete a charity request by ID
     app.delete(
@@ -454,7 +464,7 @@ app.delete("/requests/:id", verifyFBToken, verifyCharity, async (req, res) => {
         }
       }
     );
-    
+
     // Get all charity role requests
     app.get(
       "/role-requests/charity",
@@ -599,26 +609,26 @@ app.delete("/requests/:id", verifyFBToken, verifyCharity, async (req, res) => {
         res.status(500).send({ message: "Failed to fetch status counts" });
       }
     });
-// GET /users/:email
-app.get("/users/:email", verifyFBToken, async (req, res) => {
-  const user = await usersCollection.findOne({ email: req.params.email });
-  res.send(user);
-});
-// GET /charity/latest-requests
-app.get("/charity/latest-requests", async (req, res) => {
-  try {
-    const latestRequests = await db
-      .collection("donationRequests")
-      .find({})
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .toArray();
-    res.send(latestRequests);
-  } catch (error) {
-    console.error("Error fetching charity requests:", error);
-    res.status(500).send({ message: "Failed to load charity requests" });
-  }
-});
+    // GET /users/:email
+    app.get("/users/:email", verifyFBToken, async (req, res) => {
+      const user = await usersCollection.findOne({ email: req.params.email });
+      res.send(user);
+    });
+    // GET /charity/latest-requests
+    app.get("/charity/latest-requests", async (req, res) => {
+      try {
+        const latestRequests = await db
+          .collection("donationRequests")
+          .find({})
+          .sort({ createdAt: -1 })
+          .limit(6)
+          .toArray();
+        res.send(latestRequests);
+      } catch (error) {
+        console.error("Error fetching charity requests:", error);
+        res.status(500).send({ message: "Failed to load charity requests" });
+      }
+    });
 
     // 1. Get all approved donations
     app.get("/donations", async (req, res) => {
@@ -670,16 +680,16 @@ app.get("/charity/latest-requests", async (req, res) => {
       }
     );
     app.post("/reviews", verifyFBToken, async (req, res) => {
-  const review = req.body;
+      const review = req.body;
 
-  try {
-    const result = await reviewsCollection.insertOne(review);
-    res.send({ success: true, insertedId: result.insertedId });
-  } catch (error) {
-    console.error("Error saving review:", error);
-    res.status(500).send({ message: "Internal server error" });
-  }
-});
+      try {
+        const result = await reviewsCollection.insertOne(review);
+        res.send({ success: true, insertedId: result.insertedId });
+      } catch (error) {
+        console.error("Error saving review:", error);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    });
 
     app.get("/reviews", verifyFBToken, async (req, res) => {
       const { donationId } = req.query;
@@ -691,6 +701,7 @@ app.get("/charity/latest-requests", async (req, res) => {
         const reviews = await db
           .collection("reviews")
           .find({ donationId: donationId })
+          .sort({ createdAt: -1 })
           .toArray();
 
         res.send(reviews);
@@ -700,30 +711,34 @@ app.get("/charity/latest-requests", async (req, res) => {
       }
     });
     app.get("/reviews/user/:email", verifyFBToken, async (req, res) => {
-  const { email } = req.params;
-  try {
-    const reviews = await db.collection("reviews").find({ userEmail: email }).toArray();
-    res.send(reviews);
-  } catch (error) {
-    console.error("Error fetching user reviews:", error);
-    res.status(500).send({ message: "Internal server error" });
-  }
-});
-app.delete("/reviews/:id", verifyFBToken, async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await db.collection("reviews").deleteOne({ _id: new ObjectId(id) });
-    if (result.deletedCount === 1) {
-      res.send({ success: true, message: "Review deleted" });
-    } else {
-      res.status(404).send({ success: false, message: "Review not found" });
-    }
-  } catch (error) {
-    console.error("Error deleting review:", error);
-    res.status(500).send({ message: "Internal server error" });
-  }
-});
-
+      const { email } = req.params;
+      try {
+        const reviews = await db
+          .collection("reviews")
+          .find({ userEmail: email })
+          .toArray();
+        res.send(reviews);
+      } catch (error) {
+        console.error("Error fetching user reviews:", error);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    });
+    app.delete("/reviews/:id", verifyFBToken, async (req, res) => {
+      const { id } = req.params;
+      try {
+        const result = await db
+          .collection("reviews")
+          .deleteOne({ _id: new ObjectId(id) });
+        if (result.deletedCount === 1) {
+          res.send({ success: true, message: "Review deleted" });
+        } else {
+          res.status(404).send({ success: false, message: "Review not found" });
+        }
+      } catch (error) {
+        console.error("Error deleting review:", error);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    });
 
     // Get a single donation by ID
     app.get(
@@ -819,38 +834,37 @@ app.delete("/reviews/:id", verifyFBToken, async (req, res) => {
       }
     );
 
-app.get("/charity/latest-requests/recent", async (req, res) => {
-  try {
-    const requests = await db
-      .collection("roleRequests")
-      .find({ status: "approved" }) // Only show approved charity role requests
-      .sort({ date: -1 })
-      .limit(6)
-      .toArray();
+    app.get("/charity/latest-requests/recent", async (req, res) => {
+      try {
+        const requests = await db
+          .collection("roleRequests")
+          .find({ status: "approved" }) // Only show approved charity role requests
+          .sort({ date: -1 })
+          .limit(6)
+          .toArray();
 
-    const enrichedRequests = await Promise.all(
-      requests.map(async (req) => {
-        const user = await db.collection("users").findOne({ email: req.email });
+        const enrichedRequests = await Promise.all(
+          requests.map(async (req) => {
+            const user = await db
+              .collection("users")
+              .findOne({ email: req.email });
 
-        return {
-          _id: req._id,
-          charityName: user?.name || "Unknown Charity",
-          charityLogo: user?.photo || null,
-          description: req.mission || "No mission statement available",
-          donationTitle: req.organization || "No Organization Name",
-        };
-      })
-    );
+            return {
+              _id: req._id,
+              charityName: user?.name || "Unknown Charity",
+              charityLogo: user?.photo || null,
+              description: req.mission || "No mission statement available",
+              donationTitle: req.organization || "No Organization Name",
+            };
+          })
+        );
 
-    res.send(enrichedRequests);
-  } catch (error) {
-    console.error("Error fetching charity requests:", error);
-    res.status(500).send({ message: "Failed to load charity requests" });
-  }
-});
-
-
-
+        res.send(enrichedRequests);
+      } catch (error) {
+        console.error("Error fetching charity requests:", error);
+        res.status(500).send({ message: "Failed to load charity requests" });
+      }
+    });
 
     // Delete donation by ID
     app.delete(
@@ -867,86 +881,89 @@ app.get("/charity/latest-requests/recent", async (req, res) => {
       }
     );
     app.get(
-  "/charity/email/:email",
-  verifyFBToken,
-  verifyCharity,
-  async (req, res) => {
-    const { email } = req.params;
+      "/charity/email/:email",
+      verifyFBToken,
+      verifyCharity,
+      async (req, res) => {
+        const { email } = req.params;
 
-    try {
-      const user = await usersCollection.findOne({ email });
+        try {
+          const user = await usersCollection.findOne({ email });
 
-      if (!user || user.role !== "charity") {
-        return res.status(404).send({ message: "Charity not found" });
+          if (!user || user.role !== "charity") {
+            return res.status(404).send({ message: "Charity not found" });
+          }
+
+          res.send(user);
+        } catch (err) {
+          console.error("Error fetching charity profile:", err);
+          res.status(500).send({ message: "Internal server error" });
+        }
       }
-
-      res.send(user);
-    } catch (err) {
-      console.error("Error fetching charity profile:", err);
-      res.status(500).send({ message: "Internal server error" });
-    }
-  }
-);
-
-app.get("/reviews/community", async (req, res) => {
-  try {
-    const reviews = await db
-      .collection("reviews")
-      .find({})
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .toArray();
-
-    const enriched = await Promise.all(
-      reviews.map(async (review) => {
-        const user = await db.collection("users").findOne({ email: review.userEmail });
-        return {
-          _id: review._id,
-          name: review.reviewer || user?.name || "Anonymous",
-          role: user?.role === "restaurant" ? "Restaurant Partner" : "Charity Partner",
-          image: user?.photo || "/default-logo.png",
-          quote: review.comment,
-        };
-      })
     );
 
-    res.send(enriched);
-  } catch (err) {
-    console.error("Failed to load community stories", err);
-    res.status(500).send({ message: "Failed to load community stories" });
-  }
-});
+    app.get("/reviews/community", async (req, res) => {
+      try {
+        const reviews = await db
+          .collection("reviews")
+          .find({})
+          .sort({ createdAt: -1 })
+          .limit(6)
+          .toArray();
 
+        const enriched = await Promise.all(
+          reviews.map(async (review) => {
+            const user = await db
+              .collection("users")
+              .findOne({ email: review.userEmail });
+            return {
+              _id: review._id,
+              name: review.reviewer || user?.name || "Anonymous",
+              role:
+                user?.role === "restaurant"
+                  ? "Restaurant Partner"
+                  : "Charity Partner",
+              image: user?.photo || "/default-logo.png",
+              quote: review.comment,
+            };
+          })
+        );
 
- app.get(
-  "/admin/email/:email",
-  verifyFBToken,
-  verifyAdmin,
-  async (req, res) => {
-    const { email } = req.params;
-
-    try {
-      const user = await usersCollection.findOne({ email });
-
-      if (!user || user.role !== "admin") {
-        return res.status(404).send({ message: "Admin not found" });
+        res.send(enriched);
+      } catch (err) {
+        console.error("Failed to load community stories", err);
+        res.status(500).send({ message: "Failed to load community stories" });
       }
+    });
 
-      res.send({
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        photo: user.photo || null,
-        last_log_in: user.last_log_in,
-        created_at: user.created_at,
-      });
-    } catch (err) {
-      console.error("Error fetching admin profile:", err);
-      res.status(500).send({ message: "Internal server error" });
-    }
-  }
-);
+    app.get(
+      "/admin/email/:email",
+      verifyFBToken,
+      verifyAdmin,
+      async (req, res) => {
+        const { email } = req.params;
 
+        try {
+          const user = await usersCollection.findOne({ email });
+
+          if (!user || user.role !== "admin") {
+            return res.status(404).send({ message: "Admin not found" });
+          }
+
+          res.send({
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            photo: user.photo || null,
+            last_log_in: user.last_log_in,
+            created_at: user.created_at,
+          });
+        } catch (err) {
+          console.error("Error fetching admin profile:", err);
+          res.status(500).send({ message: "Internal server error" });
+        }
+      }
+    );
 
     // Get restaurant profile by email (used in RestaurantProfile component)
     app.get(
@@ -1078,22 +1095,28 @@ app.get("/reviews/community", async (req, res) => {
         }
       }
     );
-app.delete("/favorites/:id", verifyFBToken, async (req, res) => {
-  const { id } = req.params;
+    app.delete("/favorites/:id", verifyFBToken, async (req, res) => {
+      const { id } = req.params;
 
-  try {
-    const result = await favoritesCollection.deleteOne({ _id: new ObjectId(id) });
+      try {
+        const result = await favoritesCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
 
-    if (result.deletedCount === 1) {
-      res.send({ success: true, message: "Favorite removed" });
-    } else {
-      res.status(404).send({ success: false, message: "Favorite not found" });
-    }
-  } catch (error) {
-    console.error("Error removing favorite:", error);
-    res.status(500).send({ success: false, message: "Internal server error" });
-  }
-});
+        if (result.deletedCount === 1) {
+          res.send({ success: true, message: "Favorite removed" });
+        } else {
+          res
+            .status(404)
+            .send({ success: false, message: "Favorite not found" });
+        }
+      } catch (error) {
+        console.error("Error removing favorite:", error);
+        res
+          .status(500)
+          .send({ success: false, message: "Internal server error" });
+      }
+    });
 
     app.get(
       "/requests/restaurant",
@@ -1295,12 +1318,17 @@ app.delete("/favorites/:id", verifyFBToken, async (req, res) => {
             {
               $project: {
                 _id: 1,
+                donationId: "$donationId",
+
                 donationTitle: "$donationDetails.title",
                 foodType: "$donationDetails.type",
                 quantity: "$donationDetails.quantity",
                 pickupDate: "$pickupDate",
                 restaurantName: "$donationDetails.restaurant.name",
               },
+            },
+            {
+              $sort: { pickupDate: -1 },
             },
           ])
           .toArray();
