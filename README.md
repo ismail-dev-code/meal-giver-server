@@ -22,7 +22,7 @@ The **MealGiver Server** is the core API service for the MealGiver platform — 
 - **CORS**
 - **Firebase Token Verification**
 
----
+
 
 
 ---
@@ -46,12 +46,7 @@ STRIPE_SECRET_KEY=
 # Firebase Admin SDK (JSON as string)
 FB_SERVICE_KEY=
 
-
-# 📡 MealGiver API Endpoints
-
-The **MealGiver Backend** is the core API service for the MealGiver platform — a MERN stack-based food donation and redistribution system connecting restaurants with verified charities and individuals to reduce food waste.
-
----
+```
 
 ## 🛠️ Base URL
 
