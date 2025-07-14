@@ -716,6 +716,7 @@ async function run() {
         const reviews = await db
           .collection("reviews")
           .find({ userEmail: email })
+          .sort({ createdAt: -1 })
           .toArray();
         res.send(reviews);
       } catch (error) {
