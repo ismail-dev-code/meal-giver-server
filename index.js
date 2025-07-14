@@ -95,7 +95,7 @@ async function run() {
       next();
     };
     // Create PaymentIntent
-    // POST /create-payment-intent
+    // POST for create-payment-intent
     app.post("/create-payment-intent", async (req, res) => {
       const { amount } = req.body;
       const paymentIntent = await stripe.paymentIntents.create({
@@ -106,7 +106,7 @@ async function run() {
       res.send({ clientSecret: paymentIntent.client_secret });
     });
 
-    // POST /transactions
+    // POST for transactions
     app.post("/transactions", async (req, res) => {
       const result = await transactionsCollection.insertOne(req.body);
       res.send(result);
@@ -373,36 +373,6 @@ async function run() {
       }
     );
 
-    // DELETE request by ID (only if status is "pending")
-    // app.delete(
-    //   "/requests/:id",
-    //   verifyFBToken,
-    //   verifyCharity,
-    //   async (req, res) => {
-    //     const { id } = req.params;
-
-    //     try {
-    //       const request = await db
-    //         .collection("requests")
-    //         .findOne({ _id: new ObjectId(id) });
-
-    //       if (!request || request.status !== "pending") {
-    //         return res
-    //           .status(403)
-    //           .send({ message: "Only pending requests can be canceled." });
-    //       }
-
-    //       const result = await db
-    //         .collection("requests")
-    //         .deleteOne({ _id: new ObjectId(id) });
-    //       res.send(result);
-    //     } catch (err) {
-    //       console.error("Error deleting request:", err);
-    //       res.status(500).send({ message: "Failed to cancel request" });
-    //     }
-    //   }
-    // );
-
     app.delete(
       "/requests/:id",
       verifyFBToken,
@@ -411,7 +381,6 @@ async function run() {
         const { id } = req.params;
 
         try {
-          // Ensure request exists and belongs to the current user and is still pending
           const existing = await db
             .collection("requests")
             .findOne({ _id: new ObjectId(id) });
@@ -597,7 +566,6 @@ async function run() {
           ])
           .toArray();
 
-        // Convert to array with { status, count } structure
         const result = counts.map((item) => ({
           status: item._id,
           count: item.count,
@@ -609,12 +577,12 @@ async function run() {
         res.status(500).send({ message: "Failed to fetch status counts" });
       }
     });
-    // GET /users/:email
+    // GET users/:email
     app.get("/users/:email", verifyFBToken, async (req, res) => {
       const user = await usersCollection.findOne({ email: req.params.email });
       res.send(user);
     });
-    // GET /charity/latest-requests
+    // charity latest-requests
     app.get("/charity/latest-requests", async (req, res) => {
       try {
         const latestRequests = await db
@@ -630,7 +598,7 @@ async function run() {
       }
     });
 
-    // 1. Get all approved donations
+    //  Get all approved donations
     app.get("/donations", async (req, res) => {
       const approved = req.query.approved === "true";
       const filter = approved ? { approved: true } : {};
@@ -742,29 +710,24 @@ async function run() {
     });
 
     // Get a single donation by ID
-    app.get(
-      "/donations/:id",
-      verifyFBToken,
-      // verifyRestaurant,
-      async (req, res) => {
-        const { id } = req.params;
+    app.get("/donations/:id", verifyFBToken, async (req, res) => {
+      const { id } = req.params;
 
-        try {
-          const donation = await donationsCollection.findOne({
-            _id: new ObjectId(id),
-          });
+      try {
+        const donation = await donationsCollection.findOne({
+          _id: new ObjectId(id),
+        });
 
-          if (!donation) {
-            return res.status(404).send({ message: "Donation not found" });
-          }
-
-          res.send(donation);
-        } catch (error) {
-          console.error("Error fetching donation:", error);
-          res.status(500).send({ message: "Internal Server Error" });
+        if (!donation) {
+          return res.status(404).send({ message: "Donation not found" });
         }
+
+        res.send(donation);
+      } catch (error) {
+        console.error("Error fetching donation:", error);
+        res.status(500).send({ message: "Internal Server Error" });
       }
-    );
+    });
     app.get("/favorites/:email", verifyFBToken, async (req, res) => {
       const { email } = req.params;
       try {
@@ -785,13 +748,11 @@ async function run() {
             .send({ message: "Missing email or donationId" });
         }
 
-        // Check if already favorited
         const exists = await favoritesCollection.findOne({ email, donationId });
         if (exists) {
           return res.status(409).send({ message: "Already favorited" });
         }
 
-        // Save to favorites
         const result = await favoritesCollection.insertOne({
           email,
           donationId,
@@ -839,7 +800,7 @@ async function run() {
       try {
         const requests = await db
           .collection("roleRequests")
-          .find({ status: "approved" }) // Only show approved charity role requests
+          .find({ status: "approved" })
           .sort({ date: -1 })
           .limit(6)
           .toArray();
@@ -1009,7 +970,6 @@ async function run() {
         }
 
         try {
-          // Check if the same charity has already requested this donation
           const existingRequest = await db.collection("requests").findOne({
             donationId: new ObjectId(data.donationId),
             charityEmail: data.charityEmail,
@@ -1048,7 +1008,6 @@ async function run() {
 
         console.log("🛬 Received Request Body:", data);
 
-        // Check for missing fields
         const requiredFields = [
           "donationId",
           "donationTitle",
@@ -1201,7 +1160,7 @@ async function run() {
         }
       }
     );
-    // 1. Get charity pickups (accepted only)
+    //  Get charity pickups (accepted only)
     app.get(
       "/charity/my-pickups",
       verifyFBToken,
@@ -1240,7 +1199,7 @@ async function run() {
       }
     );
 
-    // 2. Confirm pickup
+    // Confirm pickup
     app.patch(
       "/charity/pickup-confirm/:id",
       verifyFBToken,
@@ -1267,7 +1226,6 @@ async function run() {
       try {
         const { donationId, reviewer, comment, rating } = req.body;
 
-        // Validate inputs
         if (
           !donationId ||
           !reviewer ||
@@ -1296,7 +1254,7 @@ async function run() {
       }
     });
 
-    // 3. Get received donations
+    // Get received donations
     app.get(
       "/charity/received-donations",
       verifyFBToken,
@@ -1360,7 +1318,7 @@ async function run() {
       }
     );
 
-    // Get statistics (e.g., total donations, approved, requested, available)
+    // Get statistics for total donations, approved, requested, available
     app.get(
       "/restaurant/stats",
       verifyFBToken,

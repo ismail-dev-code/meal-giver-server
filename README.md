@@ -4,8 +4,9 @@ The **MealGiver Server** is the core API service for the MealGiver platform — 
 
 
 
-## 🔗 Live Server
+## 🔗 Live Links
 
+> ⚙️ Live Site: `https://meal-giver-web.app`
 > ⚙️ Base URL: `https://mealgiver-server.vercel.app`
 
 
