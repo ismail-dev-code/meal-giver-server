@@ -174,7 +174,7 @@ async function run() {
       }
     });
 
-    // GET /role-request-status?email=user@example.com
+    // GET role-request-status by email
     app.get("/role-request-status", async (req, res) => {
       const email = req.query.email;
       const existing = await roleRequestsCollection.findOne({ email });
