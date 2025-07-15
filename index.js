@@ -261,6 +261,7 @@ async function run() {
                   donation: { title: 1 },
                 },
               },
+              { $sort: { _id: -1 } },
             ])
             .toArray();
 
@@ -507,7 +508,7 @@ async function run() {
     // Get all users
     app.get("/users", verifyFBToken, verifyAdmin, async (req, res) => {
       try {
-        const users = await usersCollection.find().toArray();
+        const users = await usersCollection.find().sort({ _id: -1 }).toArray();
         res.send(users);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -602,7 +603,10 @@ async function run() {
     app.get("/donations", async (req, res) => {
       const approved = req.query.approved === "true";
       const filter = approved ? { approved: true } : {};
-      const donations = await donationsCollection.find(filter).toArray();
+      const donations = await donationsCollection
+        .find(filter)
+        .sort({ _id: -1 })
+        .toArray();
       res.send(donations);
     });
     // Add a new donation (for restaurant users)
