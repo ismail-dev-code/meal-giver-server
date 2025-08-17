@@ -35,19 +35,7 @@ The **MealGiver Server** is the core API service for the MealGiver platform — 
 
 
 
-## 🔑 ENV Configuration
 
-```env
-PORT=5000
-# 🔑 ENV Configuration (Example)
-PORT=
-DB_USER=
-DB_PASS=
-STRIPE_SECRET_KEY=
-# Firebase Admin SDK (JSON as string)
-FB_SERVICE_KEY=
-
-```
 
 ## 🛠️ Base URL
 

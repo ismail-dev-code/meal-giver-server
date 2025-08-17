@@ -208,10 +208,11 @@ async function run() {
     app.patch(
       "/donations/:id",
       verifyFBToken,
-      verifyAdminOrRestaurant,
+      // verifyAdminOrRestaurant,
       async (req, res) => {
         const { id } = req.params;
         const updateData = req.body;
+        console.log(updateData);
 
         try {
           const donation = await donationsCollection.findOne({
